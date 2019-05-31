@@ -7,11 +7,11 @@ import java.util.stream.Collectors;
 
 public class CopyUtils {
 
-    //TODO: recursive
-
     /**
      * @param object        need to copy this
      * @param copiedObjects map of already copied objects, key is pair of class and hashcode, value is copied object
+     * @param needToCopy    map of all objects that need to copy, value is the list of {@link Callback} that will be called,
+     *                      when copy of corresponding object will be ready
      * @return copy of {@param object}
      */
     public static <T> T deepCopy(T object, Map<Pair<Class, Integer>, Object> copiedObjects,
@@ -27,15 +27,15 @@ public class CopyUtils {
         if (needToCopy == null) {
             needToCopy = new HashMap<>();
         }
-        T copy;
         Pair<Class, Integer> objectKey = new ImmutablePair<>(tClass, object.hashCode());
         if (copiedObjects.containsKey(objectKey)) {
             return (T) copiedObjects.get(objectKey);
         }
         needToCopy.put(objectKey, new ArrayList<>());
-        if (tClass.isPrimitive()) {
-            return object;
-        }
+        T copy;
+
+
+        //Get copy of any array
         if (tClass.isArray()) {
             Class<?> componentType = tClass.getComponentType();
             if (componentType.isPrimitive()) {
@@ -52,14 +52,15 @@ public class CopyUtils {
                         arrayCopy[i] = copiedObjects.get(arrayObjectKey);
                     } else {
                         if (needToCopy.containsKey(arrayObjectKey)) {
-                            //add callback
+                            //Add callback
                             final int arrayCopyIndex = i;
                             needToCopy.get(arrayObjectKey).add(readyCopy -> arrayCopy[arrayCopyIndex] = readyCopy);
                         } else {
                             needToCopy.put(arrayObjectKey, new ArrayList<>());
                             arrayCopy[i] = deepCopy(nextArrayObj, copiedObjects, needToCopy);
                             copiedObjects.put(arrayObjectKey, arrayCopy[i]);
-                            //check callbacks
+
+                            //Pass ready array object copy to all callbacks
                             for (Callback callback : needToCopy.get(arrayObjectKey)) {
                                 callback.callBack(arrayCopy[i]);
                             }
@@ -72,12 +73,13 @@ public class CopyUtils {
             copy = (T) getEmptyObjectOf(tClass);
         }
 
+
+        //Get copy of all fields
         List<Field> allFields = new ArrayList<>();
         while (!tClass.equals(Object.class)) {
             allFields.addAll(Arrays.stream(tClass.getDeclaredFields()).collect(Collectors.toList()));
             tClass = tClass.getSuperclass();
         }
-
         for (Field field : allFields) {
             field.setAccessible(true);
 
@@ -95,7 +97,7 @@ public class CopyUtils {
                         field.set(copy, fieldValueCopy);
                     } else {
                         if (needToCopy.containsKey(fieldObjectKey)) {
-                            //add callback
+                            //Add callback
                             needToCopy.get(fieldObjectKey).add(readyCopy -> {
                                 try {
                                     field.set(copy, readyCopy);
@@ -108,7 +110,8 @@ public class CopyUtils {
                             fieldValueCopy = deepCopy(fieldValue, copiedObjects, needToCopy);
                             copiedObjects.put(fieldObjectKey, fieldValueCopy);
                             field.set(copy, fieldValueCopy);
-                            //check callbacks
+
+                            //Pass ready field copy to all callbacks
                             for (Callback callback : needToCopy.get(fieldObjectKey)) {
                                 callback.callBack(fieldValueCopy);
                             }
@@ -119,6 +122,8 @@ public class CopyUtils {
                 }
             }
         }
+
+        //Pass ready object copy to all callbacks
         for (Callback callback : needToCopy.get(objectKey)) {
             callback.callBack(copy);
         }
@@ -196,20 +201,22 @@ public class CopyUtils {
     }
 
     public static void main(String[] args) {
+
         Map<Pair<Class, Integer>, Object> copiedObjects = new HashMap<>();
         byte b = 0b10;
         List<Integer> integerList = new ArrayList<>();
         integerList.add(5);
+
         TestInner inner = new TestInner(true, 0.35d, 0.2f, b, 4, 6, 'i', new Integer[][]{{1, 2}, {3, 4}});
         TestEntity entity = new TestEntity("My string", true, 0.25d, 0.1f, b, 2, 3, 'c', inner, integerList);
+        inner.setTestEntity(entity);
+
         String entityStr = entity.toString();
         System.out.println(entityStr);
         try {
             TestEntity copy = deepCopy(entity, copiedObjects, null);
             String copyStr = copy.toString();
             System.out.println(copyStr);
-            System.out.println("Equal: " + entityStr.equals(copyStr));
-//            System.out.println(copiedObjects.values());
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }

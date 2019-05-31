@@ -1,5 +1,3 @@
-import java.util.Arrays;
-
 public class TestInner {
 
     private boolean bo;
@@ -12,8 +10,7 @@ public class TestInner {
 
     private Integer[][] intMatrix;
 
-    //TODO:
-//    private TestEntity testEntity;
+    private TestEntity testEntity;
 
     public TestInner(boolean bo, double d, float f, byte by, int i, long l, char c, Integer[][] intMatrix) {
         this.bo = bo;
@@ -26,9 +23,9 @@ public class TestInner {
         this.intMatrix = intMatrix;
     }
 
-//    public void setTestEntity(TestEntity testEntity) {
-//        this.testEntity = testEntity;
-//    }
+    public void setTestEntity(TestEntity testEntity) {
+        this.testEntity = testEntity;
+    }
 
 
     @Override
@@ -41,6 +38,7 @@ public class TestInner {
                 ", i=" + i +
                 ", l=" + l +
                 ", c=" + c +
+                ", testEntity=" + testEntity.hashCode() +
                 ", intMatrix=" + toString(intMatrix) +
                 '}';
     }

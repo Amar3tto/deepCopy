@@ -42,7 +42,7 @@ public class TestEntity {
 
     @Override
     public String toString() {
-        return "TestEntity{" +
+        return "TestEntity(" + hashCode() + "){" +
                 "bo=" + bo +
                 ", s=" + s +
                 ", d=" + d +
@@ -51,6 +51,7 @@ public class TestEntity {
                 ", i=" + i +
                 ", l=" + l +
                 ", c=" + c +
+                ", testEntity=" + testEntity.hashCode() +
                 ", integerList=" + (integerList != null ? integerList : "null") +
                 ", testInner=" + (testInner != null ? testInner : "null") +
                 ", testInner=" + (bArray != null ? Arrays.toString(bArray) : "null") +
