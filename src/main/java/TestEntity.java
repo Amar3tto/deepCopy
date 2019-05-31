@@ -19,7 +19,6 @@ public class TestEntity {
 
     private TestInner testInner;
 
-    //TODO:
     private TestEntity testEntity;
 
     public TestEntity() {
@@ -56,9 +55,5 @@ public class TestEntity {
                 ", testInner=" + (testInner != null ? testInner : "null") +
                 ", testInner=" + (bArray != null ? Arrays.toString(bArray) : "null") +
                 '}';
-    }
-
-    public List<Integer> getIntegerList() {
-        return integerList;
     }
 }

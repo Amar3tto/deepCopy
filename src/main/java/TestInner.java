@@ -43,6 +43,9 @@ public class TestInner {
                 '}';
     }
 
+    /**
+     * Custom print of matrix {@param intMatrix}
+     */
     private String toString(Integer[][] intMatrix) {
         StringBuilder s = new StringBuilder();
         s.append(" ");
