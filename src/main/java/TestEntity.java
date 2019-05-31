@@ -37,7 +37,7 @@ public class TestEntity {
         this.testInner = testInner;
         bArray = new Boolean[] {bo};
         this.integerList = integerList;
-//        this.testEntity = this;
+        this.testEntity = this;
     }
 
     @Override

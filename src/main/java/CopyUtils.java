@@ -14,7 +14,8 @@ public class CopyUtils {
      * @param copiedObjects map of already copied objects, key is pair of class and hashcode, value is copied object
      * @return copy of {@param object}
      */
-    public static <T> T deepCopy(T object, Map<Pair<Class, Integer>, Object> copiedObjects) throws IllegalAccessException {
+    public static <T> T deepCopy(T object, Map<Pair<Class, Integer>, Object> copiedObjects,
+                                 Map<Pair<Class, Integer>, List<Callback>> needToCopy) throws IllegalAccessException {
 
         Class<?> tClass = object.getClass();
         if (tClass.isPrimitive()) {
@@ -23,11 +24,15 @@ public class CopyUtils {
         if (copiedObjects == null) {
             copiedObjects = new HashMap<>();
         }
+        if (needToCopy == null) {
+            needToCopy = new HashMap<>();
+        }
         T copy;
         Pair<Class, Integer> objectKey = new ImmutablePair<>(tClass, object.hashCode());
         if (copiedObjects.containsKey(objectKey)) {
             return (T) copiedObjects.get(objectKey);
         }
+        needToCopy.put(objectKey, new ArrayList<>());
         if (tClass.isPrimitive()) {
             return object;
         }
@@ -46,8 +51,19 @@ public class CopyUtils {
                     if (copiedObjects.containsKey(arrayObjectKey)) {
                         arrayCopy[i] = copiedObjects.get(arrayObjectKey);
                     } else {
-                        arrayCopy[i] = deepCopy(nextArrayObj, copiedObjects);
-                        copiedObjects.put(arrayObjectKey, arrayCopy[i]);
+                        if (needToCopy.containsKey(arrayObjectKey)) {
+                            //add callback
+                            final int arrayCopyIndex = i;
+                            needToCopy.get(arrayObjectKey).add(readyCopy -> arrayCopy[arrayCopyIndex] = readyCopy);
+                        } else {
+                            needToCopy.put(arrayObjectKey, new ArrayList<>());
+                            arrayCopy[i] = deepCopy(nextArrayObj, copiedObjects, needToCopy);
+                            copiedObjects.put(arrayObjectKey, arrayCopy[i]);
+                            //check callbacks
+                            for (Callback callback : needToCopy.get(arrayObjectKey)) {
+                                callback.callBack(arrayCopy[i]);
+                            }
+                        }
                     }
                 }
             }
@@ -69,19 +85,42 @@ public class CopyUtils {
 
                 Object fieldValue = field.get(object);
                 Class<?> fieldType = field.getType();
+                Object fieldValueCopy;
 
                 if (fieldValue != null && !fieldType.isPrimitive()) {
 
                     Pair<Class, Integer> fieldObjectKey = new ImmutablePair<>(fieldValue.getClass(), fieldValue.hashCode());
                     if (copiedObjects.containsKey(fieldObjectKey)) {
-                        fieldValue = copiedObjects.get(fieldObjectKey);
+                        fieldValueCopy = copiedObjects.get(fieldObjectKey);
+                        field.set(copy, fieldValueCopy);
                     } else {
-                        fieldValue = deepCopy(fieldValue, copiedObjects);
-                        copiedObjects.put(fieldObjectKey, fieldValue);
+                        if (needToCopy.containsKey(fieldObjectKey)) {
+                            //add callback
+                            needToCopy.get(fieldObjectKey).add(readyCopy -> {
+                                try {
+                                    field.set(copy, readyCopy);
+                                } catch (IllegalAccessException e) {
+                                    e.printStackTrace();
+                                }
+                            });
+                        } else {
+                            needToCopy.put(fieldObjectKey, new ArrayList<>());
+                            fieldValueCopy = deepCopy(fieldValue, copiedObjects, needToCopy);
+                            copiedObjects.put(fieldObjectKey, fieldValueCopy);
+                            field.set(copy, fieldValueCopy);
+                            //check callbacks
+                            for (Callback callback : needToCopy.get(fieldObjectKey)) {
+                                callback.callBack(fieldValueCopy);
+                            }
+                        }
                     }
+                } else {
+                    field.set(copy, fieldValue);
                 }
-                field.set(copy, fieldValue);
             }
+        }
+        for (Callback callback : needToCopy.get(objectKey)) {
+            callback.callBack(copy);
         }
         return copy;
     }
@@ -97,7 +136,7 @@ public class CopyUtils {
                 copy = tClass.newInstance();
                 return copy;
             } catch (IllegalAccessException | InstantiationException e) {
-                //Suppress
+                //Suppress exceptions, it was just try to initialize instance with no args constructor
             }
 
             if (tClass.isArray()) {
@@ -166,7 +205,7 @@ public class CopyUtils {
         String entityStr = entity.toString();
         System.out.println(entityStr);
         try {
-            TestEntity copy = deepCopy(entity, copiedObjects);
+            TestEntity copy = deepCopy(entity, copiedObjects, null);
             String copyStr = copy.toString();
             System.out.println(copyStr);
             System.out.println("Equal: " + entityStr.equals(copyStr));
