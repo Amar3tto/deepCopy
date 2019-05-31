@@ -20,7 +20,7 @@ public class TestEntity {
     private TestInner testInner;
 
     //TODO:
-//    private TestEntity testEntity;
+    private TestEntity testEntity;
 
     public TestEntity() {
     }
@@ -37,6 +37,7 @@ public class TestEntity {
         this.testInner = testInner;
         bArray = new Boolean[] {bo};
         this.integerList = integerList;
+//        this.testEntity = this;
     }
 
     @Override

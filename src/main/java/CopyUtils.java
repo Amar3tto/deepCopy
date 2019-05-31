@@ -20,9 +20,13 @@ public class CopyUtils {
         if (tClass.isPrimitive()) {
             return object;
         }
-        T copy;
         if (copiedObjects == null) {
             copiedObjects = new HashMap<>();
+        }
+        T copy;
+        Pair<Class, Integer> objectKey = new ImmutablePair<>(tClass, object.hashCode());
+        if (copiedObjects.containsKey(objectKey)) {
+            return (T) copiedObjects.get(objectKey);
         }
         if (tClass.isPrimitive()) {
             return object;
@@ -34,16 +38,20 @@ public class CopyUtils {
             }
             int arrayLength = Array.getLength(object);
 
-            Object[] array = (Object[]) Array.newInstance(componentType, arrayLength);
+            Object[] arrayCopy = (Object[]) Array.newInstance(componentType, arrayLength);
             for (int i = 0; i < arrayLength; i++) {
                 Object nextArrayObj = ((Object[]) object)[i];
                 if (nextArrayObj != null) {
-                    array[i] = deepCopy(nextArrayObj, copiedObjects);
-                    Pair<Class, Integer> objectKey = new ImmutablePair<>(array[i].getClass(), array[i].hashCode());
-                    copiedObjects.put(objectKey, array[i]);
+                    Pair<Class, Integer> arrayObjectKey = new ImmutablePair<>(nextArrayObj.getClass(), nextArrayObj.hashCode());
+                    if (copiedObjects.containsKey(arrayObjectKey)) {
+                        arrayCopy[i] = copiedObjects.get(arrayObjectKey);
+                    } else {
+                        arrayCopy[i] = deepCopy(nextArrayObj, copiedObjects);
+                        copiedObjects.put(arrayObjectKey, arrayCopy[i]);
+                    }
                 }
             }
-            return (T) array;
+            return (T) arrayCopy;
         } else {
             copy = (T) getEmptyObjectOf(tClass);
         }
@@ -64,12 +72,12 @@ public class CopyUtils {
 
                 if (fieldValue != null && !fieldType.isPrimitive()) {
 
-                    Pair<Class, Integer> objectKey = new ImmutablePair<>(fieldValue.getClass(), fieldValue.hashCode());
-                    if (copiedObjects.containsKey(objectKey)) {
-                        fieldValue = copiedObjects.get(objectKey);
+                    Pair<Class, Integer> fieldObjectKey = new ImmutablePair<>(fieldValue.getClass(), fieldValue.hashCode());
+                    if (copiedObjects.containsKey(fieldObjectKey)) {
+                        fieldValue = copiedObjects.get(fieldObjectKey);
                     } else {
                         fieldValue = deepCopy(fieldValue, copiedObjects);
-                        copiedObjects.put(objectKey, fieldValue);
+                        copiedObjects.put(fieldObjectKey, fieldValue);
                     }
                 }
                 field.set(copy, fieldValue);
@@ -153,7 +161,7 @@ public class CopyUtils {
         byte b = 0b10;
         List<Integer> integerList = new ArrayList<>();
         integerList.add(5);
-        TestInner inner = new TestInner(true, 0.35d, 0.2f, b, 4, 6, 'i', new Integer[][] { {1, 2}, {3, 4}});
+        TestInner inner = new TestInner(true, 0.35d, 0.2f, b, 4, 6, 'i', new Integer[][]{{1, 2}, {3, 4}});
         TestEntity entity = new TestEntity("My string", true, 0.25d, 0.1f, b, 2, 3, 'c', inner, integerList);
         String entityStr = entity.toString();
         System.out.println(entityStr);
