@@ -137,18 +137,19 @@ public class CopyUtils {
     private static Object getEmptyObjectOf(Class tClass) {
         Object copy;
         while (!tClass.equals(Object.class)) {
-            try {
-                copy = tClass.newInstance();
-                return copy;
-            } catch (IllegalAccessException | InstantiationException e) {
-                //Suppress exceptions, it was just try to initialize instance with no args constructor
-            }
 
             if (tClass.isArray()) {
                 return Array.newInstance(tClass.getComponentType(), 0);
+            } else {
+                try {
+                    copy = tClass.newInstance();
+                    return copy;
+                } catch (IllegalAccessException | InstantiationException e) {
+                    //Suppress exceptions, it was just try to initialize instance with no args constructor
+                }
             }
 
-            for (Constructor constructor : tClass.getConstructors()) {
+            for (Constructor constructor : tClass.getDeclaredConstructors()) {
 
                 constructor.setAccessible(true);
                 Class[] parameterTypes = constructor.getParameterTypes();
@@ -156,7 +157,7 @@ public class CopyUtils {
                     continue;
                 }
                 Object[] parameters = Arrays.stream(parameterTypes).map(type ->
-                        type.isPrimitive() ? getEmptyPrimitive(type) : getEmptyObjectOf(type)).toArray();
+                        type.isPrimitive() ? getEmptyPrimitive(type) : null).toArray();
                 try {
                     copy = constructor.newInstance(parameters);
                     return copy;
@@ -207,9 +208,15 @@ public class CopyUtils {
         List<Integer> integerList = new ArrayList<>();
         integerList.add(5);
 
-        TestInner inner = new TestInner(true, 0.35d, 0.2f, b, 4, 6, 'i', new Integer[][]{{1, 2}, {3, 4}});
-        TestEntity entity = new TestEntity("My string", true, 0.25d, 0.1f, b, 2, 3, 'c', inner, integerList);
+        TestInner inner = new TestInner(true, 0.35d, 0.2f, b, 4, 6, 'i', new Integer[][]{{1, 2}, {1, 4}});
+        TestChild child = new TestChild(true, 0.45d, 0.3f, b, 8, 12, 'c', new Integer[][]{{2, 1}, {2, 3}});
+        List<TestInner> innerList = new LinkedList<>();
+        innerList.add(inner);
+        innerList.add(inner);
+        child.setInnerList(innerList);
+        TestEntity entity = new TestEntity("My string", true, 0.25d, 0.1f, b, 2, 3, 'e', inner, integerList, child);
         inner.setTestEntity(entity);
+        child.setTestEntity(entity);
 
         String entityStr = entity.toString();
         System.out.println(entityStr);

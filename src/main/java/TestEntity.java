@@ -21,10 +21,12 @@ public class TestEntity {
 
     private TestEntity testEntity;
 
+    private TestChild testChild;
+
     public TestEntity() {
     }
 
-    public TestEntity(String s, boolean bo, double d, float f, byte by, int i, long l, char c, TestInner testInner, List<Integer> integerList) {
+    public TestEntity(String s, boolean bo, double d, float f, byte by, int i, long l, char c, TestInner testInner, List<Integer> integerList, TestChild testChild) {
         this.s = s;
         this.bo = bo;
         this.d = d;
@@ -37,6 +39,7 @@ public class TestEntity {
         bArray = new Boolean[] {bo};
         this.integerList = integerList;
         this.testEntity = this;
+        this.testChild = testChild;
     }
 
     @Override
@@ -53,7 +56,8 @@ public class TestEntity {
                 ", testEntity=" + testEntity.hashCode() +
                 ", integerList=" + (integerList != null ? integerList : "null") +
                 ", testInner=" + (testInner != null ? testInner : "null") +
-                ", testInner=" + (bArray != null ? Arrays.toString(bArray) : "null") +
+                ", testChild=" + (testChild != null ? testChild : "null") +
+                ", bArray=" + (bArray != null ? Arrays.toString(bArray) : "null") +
                 '}';
     }
 }

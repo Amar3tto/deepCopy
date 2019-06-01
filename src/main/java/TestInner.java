@@ -1,16 +1,16 @@
 public class TestInner {
 
-    private boolean bo;
-    private double d;
-    private float f;
-    private byte by;
-    private int i;
-    private long l;
-    private char c;
+    protected boolean bo;
+    protected double d;
+    protected float f;
+    protected byte by;
+    protected int i;
+    protected long l;
+    protected char c;
 
-    private Integer[][] intMatrix;
+    protected Integer[][] intMatrix;
 
-    private TestEntity testEntity;
+    protected TestEntity testEntity;
 
     public TestInner(boolean bo, double d, float f, byte by, int i, long l, char c, Integer[][] intMatrix) {
         this.bo = bo;
@@ -46,7 +46,7 @@ public class TestInner {
     /**
      * Custom print of matrix {@param intMatrix}
      */
-    private String toString(Integer[][] intMatrix) {
+    protected String toString(Integer[][] intMatrix) {
         StringBuilder s = new StringBuilder();
         s.append(" ");
         for (Integer[] intArray : intMatrix) {
